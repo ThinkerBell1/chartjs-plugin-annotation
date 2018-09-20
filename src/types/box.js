@@ -1,7 +1,55 @@
 // Box Annotation implementation
 module.exports = function(Chart) {
 	var helpers = require('../helpers.js')(Chart);
+	//copied from line. 
+	//TODO - maybe move to annotation.element ?
+	function calculateLabelPosition(view, width, height, padWidth, padHeight) {
+		var line = view.line;
+		var ret = {};
+		var xa = 0;
+		var ya = 0;
 
+		switch (true) {
+		// top align
+		case view.mode === verticalKeyword && view.labelPosition === 'top':
+			ya = padHeight + view.labelYAdjust;
+			xa = (width / 2) + view.labelXAdjust;
+			ret.y = view.y1 + ya;
+			ret.x = (isFinite(line.m) ? line.getX(ret.y) : view.x1) - xa;
+			break;
+
+		// bottom align
+		case view.mode === verticalKeyword && view.labelPosition === 'bottom':
+			ya = height + padHeight + view.labelYAdjust;
+			xa = (width / 2) + view.labelXAdjust;
+			ret.y = view.y2 - ya;
+			ret.x = (isFinite(line.m) ? line.getX(ret.y) : view.x1) - xa;
+			break;
+
+		// left align
+		case view.mode === horizontalKeyword && view.labelPosition === 'left':
+			xa = padWidth + view.labelXAdjust;
+			ya = -(height / 2) + view.labelYAdjust;
+			ret.x = view.x1 + xa;
+			ret.y = line.getY(ret.x) + ya;
+			break;
+
+		// right align
+		case view.mode === horizontalKeyword && view.labelPosition === 'right':
+			xa = width + padWidth + view.labelXAdjust;
+			ya = -(height / 2) + view.labelYAdjust;
+			ret.x = view.x2 - xa;
+			ret.y = line.getY(ret.x) + ya;
+			break;
+
+		// center align
+		default:
+			ret.x = ((view.x1 + view.x2 - width) / 2) + view.labelXAdjust;
+			ret.y = ((view.y1 + view.y2 - height) / 2) + view.labelYAdjust;
+		}
+
+		return ret;
+	}
 	var BoxAnnotation = Chart.Annotation.Element.extend({
 		setDataLimits: function() {
 			var model = this._model;
@@ -90,6 +138,36 @@ module.exports = function(Chart) {
 			model.borderColor = options.borderColor;
 			model.borderWidth = options.borderWidth;
 			model.backgroundColor = options.backgroundColor;
+			
+			// Figure out the label:
+			model.labelBackgroundColor = options.label.backgroundColor;
+			model.labelFontFamily = options.label.fontFamily;
+			model.labelFontSize = options.label.fontSize;
+			model.labelFontStyle = options.label.fontStyle;
+			model.labelFontColor = options.label.fontColor;
+			model.labelXPadding = options.label.xPadding;
+			model.labelYPadding = options.label.yPadding;
+			model.labelCornerRadius = options.label.cornerRadius;
+			model.labelPosition = options.label.position;
+			model.labelXAdjust = options.label.xAdjust;
+			model.labelYAdjust = options.label.yAdjust;
+			model.labelEnabled = options.label.enabled;
+			model.labelContent = options.label.content;
+
+			ctx.font = chartHelpers.fontString(model.labelFontSize, model.labelFontStyle, model.labelFontFamily);
+			var textWidth = ctx.measureText(model.labelContent).width;
+			var textHeight = ctx.measureText('M').width;
+			var labelPosition = calculateLabelPosition(model, textWidth, textHeight, model.labelXPadding, model.labelYPadding);
+			model.labelX = labelPosition.x - model.labelXPadding;
+			model.labelY = labelPosition.y - model.labelYPadding;
+			model.labelWidth = textWidth + (2 * model.labelXPadding);
+			model.labelHeight = textHeight + (2 * model.labelYPadding);
+
+			model.borderColor = options.borderColor;
+			model.borderWidth = options.borderWidth;
+			model.borderDash = options.borderDash || [];
+			model.borderDashOffset = options.borderDashOffset || 0;
+			//
 		},
 		inRange: function(mouseX, mouseY) {
 			var model = this._model;
