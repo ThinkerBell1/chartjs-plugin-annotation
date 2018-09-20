@@ -137,6 +137,40 @@ module.exports = function(Chart) {
 			var height = view.bottom - view.top;
 			ctx.fillRect(view.left, view.top, width, height);
 			ctx.strokeRect(view.left, view.top, width, height);
+			
+			//add labels
+			if (view.labelEnabled && view.labelContent) {
+				ctx.beginPath();
+				ctx.rect(view.clip.x1, view.clip.y1, view.clip.x2 - view.clip.x1, view.clip.y2 - view.clip.y1);
+				ctx.clip();
+
+				ctx.fillStyle = view.labelBackgroundColor;
+				// Draw the tooltip
+				chartHelpers.drawRoundedRectangle(
+					ctx,
+					view.labelX, // x
+					view.labelY, // y
+					view.labelWidth, // width
+					view.labelHeight, // height
+					view.labelCornerRadius // radius
+				);
+				ctx.fill();
+
+				// Draw the text
+				ctx.font = chartHelpers.fontString(
+					view.labelFontSize,
+					view.labelFontStyle,
+					view.labelFontFamily
+				);
+				ctx.fillStyle = view.labelFontColor;
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'middle';
+				ctx.fillText(
+					view.labelContent,
+					view.labelX + (view.labelWidth / 2),
+					view.labelY + (view.labelHeight / 2)
+				);
+			}
 
 			ctx.restore();
 		}
